@@ -1,0 +1,63 @@
+replicaCount: 1
+
+image:
+  repository: ibmcase/mysql
+  tag: latest
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+server_id: 1
+max_servers: 4
+
+global:
+  persistence:
+    enabled: false
+    volume:
+      storageClass:
+      size: 
+
+dbname: inventorydb
+user: dbuser
+password: password
+rootPassword: admin123
+
+service:
+  name: mysqldb
+  type: ClusterIP
+  externalPort: 3306
+  internalPort: 3306
+
+binding:
+  name: binding-mysql
+
+resources:
+  limits:
+    memory: 128Mi
+  requests:
+    memory: 64Mi
+
+labels:
+  datastore: mysql
+
+persistence:
+  existingName:
+  enabled: false
+  volume:
+    storageClass:
+    size: 
+
+
+backup:
+  enabled: false
+  objStoreSecretName: 
+  backupName: 
+  backupType: incremental
+  scheduleType: periodic
+  scheduleInfo: daily

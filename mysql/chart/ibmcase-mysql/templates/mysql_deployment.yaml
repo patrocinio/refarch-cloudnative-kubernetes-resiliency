@@ -1,0 +1,97 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.dbname }}-mysql
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ toYaml .Values.labels | indent 4 }}
+    release: {{.Release.Name | quote }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+{{ toYaml .Values.labels | indent 8 }}
+    spec:
+      containers:
+        - name: mysql
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: {{ .Values.dbname }}-mysql
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          env:
+            - name: MYSQL_DATABASE
+              value: {{ .Values.dbname | quote }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.binding.name }}
+                  key:  mysql-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.binding.name }}
+                  key:  mysql-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.binding.name }}
+                  key:  mysql-root-password
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "false"
+            - name: SERVER_ID
+              value: {{ .Values.server_id | quote }}
+            - name: MAX_SERVER_ID
+              value: {{ .Values.max_servers | quote }}
+
+          resources:
+{{ toYaml .Values.resources | indent 14 }}
+          livenessProbe:
+            exec:
+              command:
+              - mysqladmin
+              - ping
+            initialDelaySeconds: 45
+            timeoutSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            exec:
+              command:
+              - mysqladmin
+              - ping
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 30
+{{- if .Values.backup.enabled }}
+        - name: inventory-backup-container
+          image: ibmcase/ibm-backup-restore
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          command: ["/scripts/docker-entrypoint.sh", "/bin/bash", "-c", "/backup_restore/vbackup"]
+          env:
+          - name: BACKUP_NAME
+            value: {{ required "A valid value of backup.backupName is required!" .Values.backup.backupName }}
+          - name: BACKUP_DIRECTORY
+            value: /var/lib/mysql
+          - name: RESTORE_DIRECTORY
+            value: /var/lib/mysql
+          - name: SCHEDULE_TYPE
+            value: {{ .Values.backup.scheduleType }}
+          - name: SCHEDULE_INFO
+            value: {{ .Values.backup.scheduleInfo }}
+          - name: BACKUP_TYPE
+            value: {{ .Values.backup.backupType }}
+          - name: OBJECT_STORAGE_CREDENTIALS
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "A valid value of backup.objStoreSecretName is required!" .Values.backup.objStoreSecretName }}
+                key: binding
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: {{ .Values.dbname }}-mysql
+{{ end }}
+      volumes:
+        {{ template "mysqlDataVolume" . }}
