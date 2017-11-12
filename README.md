@@ -1,24 +1,25 @@
-# Making Microservices Resilient
+# Making Microservices Highly Available
 
 ## Introduction
 This repository contains instructions and tools to improve the availability and scalability of the BlueCompute sample application available at the following [link](https://github.com/ibm-cloud-architecture/refarch-cloudnative)
 
-It's recommended to complete the deployment of all components of the BlueCompute application in at least one Bluemix region before going ahead with the instructions provided in this document to setup a resilient environment.
+It's recommended to complete the deployment of all components of the BlueCompute application in at least one Kubernetes cluster before going ahead with the instructions provided in this document to setup a resilient environment.
 
-If you are not interested on understanding aspects like Disaster Recovery or scalability at a global level, you can ignore this project.
 
 ## High Availability and Disaster Recovery
 When dealing with improved resilience it important to make some distinctions between High Availability (HA) and Disaster Recovery (DR).
 
-HA is mainly about keeping the service available to the end users when "ordinary" activities are performed on the system like deploying updates, rebooting the hosting Virtual Machines, applying security patches to the hosting OS, etc.  For our purposes, High Availability within a single site can be achieved by eliminating single points of failure.  The Blue Compute sample application in its current form implements high availability.
+HA is mainly about keeping the service available to the end users when "ordinary" activities are performed on the system like deploying updates, rebooting the hosting servers, applying security patches to the hosting OS, etc.  For our purposes, High Availability within a single site can be achieved by eliminating single points of failure.  The Blue Compute sample application in its current form provides high availability.
 
-HA usually doesn't deal with major unplanned (or planned) issues such as complete site loss due to major power outages, earthquakes, severe hardware failures, full-site connectivity loss, etc.   In such cases, if the service must meet strict Service Level Objectives (SLO), you should make the whole application stack (infrastructure, services and application components) redundant by deploying it in at least two different Bluemix regions. This is typically defined as a DR Architecture.
+Now the notion of High Availability needs to be expanded beyond a single site, to cover complete site loss due to major power outages, earthquakes, severe hardware failures, full-site connectivity loss, etc.   In such cases, if the service must meet strict Service Level Objectives (SLO), you should make the whole application stack (infrastructure, services and application components) redundant by deploying it in at least two Kubernetes clusters. 
 
-There are many options to implement DR solutions.  For the sake of simplicity, we can group the different options in three major categories:
+Disaster Recovery is concerning about the policies and procedures to recover from a disaster.
+
+There are many options to implement HA and DR solutions.  For the sake of simplicity, we can group the different options in three major categories:
 
 * __Active/Passive__
   
-  __Active/Passive__ options are based on keeping the full application stack active in one location, while another application stack is deployed in a different location, but kept idle (or shut down). In the case of prolonged unavailability of the primary site, the application stack is activated in the backup site. Often that requires the restoring of backups taken in the primary site. This approach is not recommended when loosing data can be a problem (e.g. when the Recovery Point Objective (RPO) is less than a few hours ) or when the availability of the service is critical (e.g. when the Return to Operations (RTO) objective is less than a few hours).
+  __Active/Passive__ options are based on keeping the full application stack active in one location, while another application stack is deployed in a different location, but kept idle (or shut down). In the case of prolonged unavailability of the primary site, the application stack is activated in the backup site. Often that requires the restoring of backups taken in the primary site. This approach is not recommended when loosing data can be a problem (e.g. when the Recovery Point Objective, RPO, is less than a few hours) or when the availability of the service is critical (e.g. when the Recovery Time Objective, RTO, is less than a few hours).
   
 * __Active/Standby__
 
@@ -26,7 +27,7 @@ There are many options to implement DR solutions.  For the sake of simplicity, w
 
 * __Active/Active__
 
-  In the __Active/Active__ case both locations are active and client transactions are distributed according to predefined policies (such as round-robin, geographical load balancing, etc. ) to both regions.  In the case of failure of one site the other site must be able to serve all clients. It's possible to achieve both an RPO and RTO close to zero with this configuration. The drawback is that both regions must be sized to handle the full load, even if they are used at the half of their capabilities when both locations are available. In such cases the Bluemix Autoscaling service can help in keeping always resources allocated according to the needs (as happens with the BlueCompute sample application).
+  In the __Active/Active__ case both locations are active and client transactions are distributed according to predefined policies (such as round-robin, geographical load balancing, etc. ) to both regions.  In the case of failure of one site the other site must be able to serve all clients. It's possible to achieve both an RPO and RTO close to zero with this configuration. The drawback is that both regions must be sized to handle the full load, even if they are used at the half of their capabilities when both locations are available. 
 
 ## Scalability and Performance considerations
 
@@ -34,22 +35,17 @@ Adding resilience usually implies having redundant deployments, such redundancy 
 In case of global applications, it is possible to redirect users' transactions to the closest location (to improve response time and latency) by using Global Routing solutions (like Akamai or Dyn).
 
 ## Resiliency in BlueCompute
-BlueCompute sample application is designed to provide HA when running in a single location; all services are deployed as redundant ReplicaSets in Kubernetes. Kubernetes continously monitors all containers and will redeploy failed containers in case of problems.
+BlueCompute sample application is designed to provide HA when running in a single site; all services are deployed as redundant ReplicaSets in Kubernetes. Kubernetes continously monitors all Pods and will redeploy failed Pods in case of problems.
 
 BlueCompute can be deployed in __Active/Active__ because this is the most typical scenario for modern applications to which we demand 99.999% availability and extraordinary levels of scalability.
 
-The Diagram below shows the DR topology for BlueCompute solution in Bluemix.
 
- ![Architecture](DR-Active-Active.png?raw=true)
-
-Much of the guidance comes from this [article.](https://www.ibm.com/developerworks/cloud/library/cl-high-availability-and-disaster-recovery-in-bluemix-trs/index.html)
-
-## Implementing Active/Active DR for BlueCompute
-In this section you find the step by step guide that will help you in the implementation of the Active/Active DR solution for BlueCompute.
+## Implementing Active/Active HA for BlueCompute
+In this section you find the step by step guide that will help you in the implementation of the Active/Active HA solution for BlueCompute.
 
 The main steps are the following:  
 
-1. __Deploy BlueCompute to a new Bluemix region__ Assuming you have already deployed BlueCompute to Bluemix US South region, you can deploy a new instance in Bluemix EU-DE region by re-following instructions at this [link](https://github.com/ibm-cloud-architecture/refarch-cloudnative-kubernetes). It is strongly recommended to keep same naming conventions between the two deployments (Bluemix spaces, Application names, Kubernetes service names, etc.).
+1. __Deploy BlueCompute to a new Kubernetes cluster__ Assuming you have already deployed BlueCompute to one Kubernetes cluster, you can deploy a new instance in Bluemix EU-DE region by re-following instructions at this [link](https://github.com/ibm-cloud-architecture/refarch-cloudnative-kubernetes). It is strongly recommended to keep same naming conventions between the two deployments (Bluemix spaces, Application names, Kubernetes service names, etc.).
 
 2. __Configure Database Replication__  for both MySQL and Cloudant DB as the described in the documents available at the links below:
 
