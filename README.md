@@ -45,7 +45,7 @@ In this section you find the step by step guide that will help you in the implem
 
 The main steps are the following:  
 
-1. __Deploy BlueCompute to a new Kubernetes cluster__ Assuming you have already deployed BlueCompute to one Kubernetes cluster, you can deploy a new instance in Bluemix EU-DE region by re-following instructions at this [link](https://github.com/ibm-cloud-architecture/refarch-cloudnative-kubernetes). It is strongly recommended to keep same naming conventions between the two deployments (Bluemix spaces, Application names, Kubernetes service names, etc.).
+1. __Deploy BlueCompute to a new Kubernetes cluster__ Deploy BlueCompute to another  Kubernetes cluster, by re-following instructions at this [link](https://github.com/ibm-cloud-architecture/refarch-cloudnative-kubernetes). It is strongly recommended to keep same naming conventions between the two deployments (Kubernetes namespaces, etc.).
 
 2. __Configure Database Replication__  for both MySQL and Cloudant DB as the described in the documents available at the links below:
 

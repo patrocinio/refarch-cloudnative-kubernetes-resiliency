@@ -2,20 +2,20 @@
 
 A MySQL database is used by both [Orders](https://github.com/ibm-cloud-architecture/refarch-cloudnative-micro-orders/tree/kube-int) and [Inventory](https://github.com/ibm-cloud-architecture/refarch-cloudnative-micro-inventory/tree/kube-int) microservices.
 
-MySQL is provisioned using master-master replication across regions.  In this example, we deploy the microservice from the BlueCompute reference application in Kubernetes clusters in two separate Bluemix regions.  We also deploy the associated MySQL databases provisioned in containers with persistent volumes in Kubernetes clusters in each region, dal10 and ams03.
+MySQL is provisioned using master-master replication across regions.  In this example, we deploy the microservice from the BlueCompute reference application in Kubernetes clusters.  We also deploy the associated MySQL databases provisioned in containers with persistent volumes in Kubernetes clusters in each region (wdc04 and lon02)
 
 ### Setup Database Master-Master replication in IBM Cloud Datacenter(s)
 
 1. Clone the repository
 
    ```
-   # git clone https://github.com/ibm-cloud-architecture/refarch-cloudnative-resiliency
+   # git clone https://github.com/ibm-cloud-architecture/refarch-cloudnative-kubernetes-resiliency
    ```
 
 2. Change directory to the `mysql/chart` folder.
 
    ```
-   # cd mysql/chart
+   # cd mysql/kubernetes
    ```
 
 3. Create a Persistent Volume Claim (PVC) for the MySQL data directory that the container will mount
@@ -24,7 +24,7 @@ MySQL is provisioned using master-master replication across regions.  In this ex
    # kubectl create -f mysql-data.yaml
    ```
    
-   This creates a Persistent Volume on Bluemix Infrastructure that gets bound to your Kubernetes cluster.  It may take a few minutes for the volume to be provisioned and bound.  You can monitor the progress using:
+   This creates a Persistent Volume Claim on your Kubernetes cluster.  It may take a few minutes for the volume to be provisioned and bound.  You can monitor the progress using:
    
    ```
    # kubectl get pvc mysql-data
@@ -35,7 +35,6 @@ MySQL is provisioned using master-master replication across regions.  In this ex
 3. Install the MySQL chart using Helm:
 
    ```
-   # helm init
    # helm install ibmcase-mysql \
        --set mysql.service.type=<service type> \
        --set mysql.dbname=<name of database to create> \
@@ -47,7 +46,7 @@ MySQL is provisioned using master-master replication across regions.  In this ex
    - `<service_type>` is one of `NodePort` or `LoadBalancer`.
      - `NodePort` exposes a high-port on the worker nodes that forwards traffic to port `3306` of the MySQL container
      - `LoadBalancer` exposes the MySQL service using an external IP that clients (and replicas) can use to connect to the MySQL container over port 3306.
-   - `<server ID>` uniquely identifies the servers.  By default the chart supports up to 4 servers; specify `1`, `2`, `3`, or `4`.  In each region, ensure that the server ID is unique.
+   - `<server ID>` uniquely identifies the servers.  By default the chart supports up to 4 servers; specify `1`, `2`, `3`, or `4`.  In each Kubernetes cluster, ensure that the server ID is unique.
 
    When the chart is installed, the Service resource will be printed to the console which contains either the LoadBalancer IP and/or the exposed NodePort.
    
